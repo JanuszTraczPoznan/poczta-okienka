@@ -32,8 +32,8 @@ Autor: Janusz Tracz
 
 ### Strona startowa
 
-![Strona startowa](strona-startowa.png)
+![Strona startowa](docs/strona-startowa.png)
 
 ### Widok grafiku
 
-![Widok grafiku](widok-grafiku.png)
+![Widok grafiku](docs/widok-grafiku.png)
