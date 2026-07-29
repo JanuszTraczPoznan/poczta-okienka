@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grafik Stanowiskowy Poczty Polskiej</title>
+    <!-- Biblioteka do eksportu do PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #0b4b83;
+            --dark-blue: #063156;
+            --accent-red: #9e0000;
+            --bg-light: #f4f7f9;
+            --border-color: #cbd5e1;
+            --coffee-bg: #e2d3c2;
+            --coffee-text: #5c4033;
+            --work-bg: #e2effd;
+            --work-text: #1e40af;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-blue);
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 15px;
+            color: var(--primary-blue);
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .date-picker-group {
+            display: flex;
+            gap: 20px;
+            background: #ffffff;
+            padding: 10px 0;
+        }
+
+        .form-control {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-control label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        input[type="date"], select {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            background: #ffffff;
+        }
+
+        input[type="date"]:focus, select:focus {
+            border-color: var(--primary-blue);
+        }
+
+        /* Sekcja pracowników - Kafelki */
+        .staff-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .staff-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            background: #f8fafc;
+        }
+
+        .staff-card.wide {
+            grid-column: 1 / -1;
+        }
+
+        .staff-name {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .staff-card select, .staff-card input {
+            width: 100%;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+
+        .staff-card input[type="date"] {
+            color: #94a3b8;
+        }
+
+        /* Przyciski */
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--dark-blue);
+        }
+
+        .btn-danger {
+            background-color: var(--accent-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #7a0000;
+        }
+
+        /* Tabela wynikowa */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            background: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 8px 4px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+        }
+
+        th.col-etape { width: 10%; }
+        th.col-okno { width: 11%; }
+        th.col-pomoc { width: 12%; }
+        th.col-socjal { width: 12%; }
+        th.col-suma { width: 11%; }
+
+        td {
+            border: 1px solid var(--border-color);
+            padding: 6px 4px;
+            vertical-align: middle;
+            background: #ffffff;
+        }
+
+        .date-row-header {
+            background-color: #cbd5e1;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 10px;
+            color: #1e293b;
+            font-size: 12px;
+        }
+
+        .shift-name {
+            font-weight: bold;
+            color: #0f172a;
+            text-align: left;
+            padding-left: 8px;
+        }
+
+        /* Bloki wewnątrz komórek grafiku */
+        .schedule-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+            min-height: 45px;
+        }
+
+        .block-box {
+            border-radius: 4px;
+            padding: 3px 6px;
+            width: 85%;
+            box-sizing: border-box;
+            font-size: 10px;
+        }
+
+        .block-title {
+            font-weight: bold;
+            margin-bottom: 1px;
+            text-transform: uppercase;
+        }
+
+        .block-time {
+            font-size: 9px;
+        }
+
+        .block-coffee {
+            background-color: var(--coffee-bg);
+            color: var(--coffee-text);
+            border: 1px solid #d4c3b3;
+        }
+
+        .block-work {
+            background-color: var(--work-bg);
+            color: var(--work-text);
+            border: 1px solid #bfdbfe;
+        }
+
+        /* Suma godzin po prawej stronie */
+        .hours-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            align-items: flex-start;
+            padding-left: 8px;
+        }
+
+        .hours-row {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            font-size: 10px;
+        }
+
+        .hours-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .hours-value {
+            font-weight: bold;
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #15803d;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app-container">
+    <h1 id="app-title">Aplikacja: Grafik Stanowiskowy Poczty Polskiej (Wersja V23 - Pełna Obsada Okienek Głównych)</h1>
+
+    <!-- 1. Wybierz okres grafiku -->
+    <h2>1. Wybierz okres grafiku (Wybór tygodnia)</h2>
+    <div class="date-picker-group">
+        <div class="form-control">
+            <label>Data Od:</label>
+            <input type="date" id="date-from" value="2026-06-01">
+        </div>
+        <div class="form-control">
+            <label>Data Do:</label>
+            <input type="date" id="date-to" value="2026-06-05">
+        </div>
+    </div>
+
+    <!-- 2. Zgłoś nieobecności personelu -->
+    <h2>2. Zgłoś nieobecności personelu (L4 / Urlop)</h2>
+    <div class="staff-grid" id="staff-inputs-container">
+        <!-- Generowane dynamicznie przez JS -->
+    </div>
+
+    <!-- Przyciski akcji -->
+    <div class="btn-container">
+        <button class="btn btn-primary" onclick="generateSchedule()">Generuj Grafik</button>
+        <button class="btn btn-danger" onclick="downloadPDF()">Pobierz do PDF</button>
+    </div>
+
+    <!-- Miejsce na wygenerowaną tabelę wynikową -->
+    <div class="table-wrapper" id="schedule-output"></div>
+</div>
+
+<script>
+    const employees = ["KOSMACZ", "KOZBUR", "ZYGADŁO", "SŁAWIŃSKA", "GRABA", "JANKOWIAK", "KWIATKOWSKI"];
+
+    function initStaffForm() {
+        const container = document.getElementById('staff-inputs-container');
+        container.innerHTML = '';
+        
+        employees.forEach(emp => {
+            const isKwiatkowski = (emp === "KWIATKOWSKI");
+            const card = document.createElement('div');
+            card.className = `staff-card ${isKwiatkowski ? 'wide' : ''}`;
+            
+            card.innerHTML = `
+                <div class="staff-name">${emp}</div>
+                <select id="status-${emp}" onchange="toggleDateInputs('${emp}')">
+                    <option value="Obecny">Obecny</option>
+                    <option value="L4">L4 (Zwolnienie)</option>
+                    <option value="Urlop">Urlop</option>
+                    <option value="Inne">Inne</option>
+                </select>
+                <input type="date" id="start-${emp}" placeholder="rrrr-mm-dd" disabled>
+                <input type="date" id="end-${emp}" placeholder="rrrr-mm-dd" disabled>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function toggleDateInputs(emp) {
+        const status = document.getElementById(`status-${emp}`).value;
+        const startInput = document.getElementById(`start-${emp}`);
+        const endInput = document.getElementById(`end-${emp}`);
+        
+        if (status === 'Obecny') {
+            startInput.disabled = true;
+            endInput.disabled = true;
+            startInput.value = '';
+            endInput.value = '';
+        } else {
+            startInput.disabled = false;
+            endInput.disabled = false;
+        }
+    }
+
+    function isEmployeeAvailable(emp, dateStr) {
+        const status = document.getElementById(`status-${emp}`).value;
+        if (status === 'Obecny') return true;
+        
+        const startVal = document.getElementById(`start-${emp}`).value;
+        const endVal = document.getElementById(`end-${emp}`).value;
+        
+        if (!startVal || !endVal) return true;
+        
+        const current = new Date(dateStr);
+        const start = new Date(startVal);
+        const end = new Date(endVal);
+        
+        current.setHours(0,0,0,0);
+        start.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+        
+        return !(current >= start && current <= end);
+    }
+
+    function generateSchedule() {
+        const dateFromVal = document.getElementById('date-from').value;
+        const dateToVal = document.getElementById('date-to').value;
+        
+        if (!dateFromVal || !dateToVal) {
+            alert('Proszę wybrać zakres dat.');
+            return;
+        }
+        
+        const startDate = new Date(dateFromVal);
+        const endDate = new Date(dateToVal);
+        
+        if (startDate > endDate) {
+            alert('Data początkowa nie może być późniejsza niż końcowa.');
+            return;
+        }
+
+        let outputHtml = `
+            <table id="schedule-table">
+                <thead>
+                    <tr>
+                        <th class="col-etape">Etap Dnia</th>
+                        <th class="col-okno">Okienko 1</th>
+                        <th class="col-okno">Okienko 2</th>
+                        <th class="col-okno">Okienko 3</th>
+                        <th class="col-pomoc">Okienko 4 pomocnicze</th>
+                        <th class="col-pomoc">Okienko 5 pomocnicze</th>
+                        <th class="col-socjal">Pomieszczenie Socjalne</th>
+                        <th class="col-suma">Suma Godzin</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let currentDate = new Date(startDate);
+        let dayCounter = 0;
+
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            
+            let availableActive = employees.filter(emp => emp !== "KWIATKOWSKI" && isEmployeeAvailable(emp, dateStr));
+            let kwatkowskiAvailable = isEmployeeAvailable("KWIATKOWSKI", dateStr);
+
+            let assignments = {
+                poranna: { o1: '-', o2: '-', o3: '-', o4: '-', o5: '-' },
+                popoludniowa: { o1: '-', o2: '-', o3: '-', o4: '-', o5: '-' }
+            };
+
+            let morningPool = [];
+            let afternoonPool = [];
+
+            if (availableActive.length >= 6) {
+                const shiftPattern = dayCounter % 2;
+                if(shiftPattern === 0) {
+                    morningPool = [availableActive[0], availableActive[5], availableActive[1]]; 
+                    afternoonPool = [availableActive[3], availableActive[4], availableActive[2]]; 
+                } else {
+                    morningPool = [availableActive[1], availableActive[0], availableActive[5]];
+                    afternoonPool = [availableActive[3], availableActive[4], availableActive[2]];
+                }
+            } else {
+                let mid = Math.ceil(availableActive.length / 2);
+                morningPool = availableActive.slice(0, mid);
+                afternoonPool = availableActive.slice(mid);
+            }
+
+            // --- ZMIANA PORANNA --- (Okienka główne 1-3 w pełni obsadzone)
+            if (morningPool[0]) assignments.poranna.o1 = morningPool[0];
+            if (morningPool[1]) assignments.poranna.o2 = morningPool[1];
+            if (morningPool[2]) assignments.poranna.o3 = morningPool[2];
+            
+            if (afternoonPool[2]) assignments.poranna.o4 = afternoonPool[2]; 
+            if (afternoonPool[0]) assignments.poranna.o5 = afternoonPool[0]; 
+
+            // --- ZMIANA POPOŁUDNIOWA --- (Przesunięcie pracownika ZYGADŁO z bufora na Okienko Główne 3)
+            if (afternoonPool[0]) assignments.popoludniowa.o1 = afternoonPool[0];
+            if (afternoonPool[1]) assignments.popoludniowa.o2 = afternoonPool[1];
+            if (afternoonPool[2]) assignments.popoludniowa.o3 = afternoonPool[2]; // ZYGADŁO obsadza Okienko 3 zamiast rezerwy
+
+            if (afternoonPool[1]) assignments.popoludniowa.o4 = afternoonPool[1]; // GRABA (13:00 - 14:00)
+            // Okienko pomocnicze 4 w popołudniowym slocie po 14:00 pełni funkcję REZERWY/buforu
+            assignments.popoludniowa.o4_sec = "REZERWA / BUFOR"; 
+
+            // Konstrukcja wiersza z datą
+            outputHtml += `<tr><td colspan="8" class="date-row-header">${dateStr}</td></tr>`;
+
+            // Obliczanie czasu pracy dla widoku Suma Godzin
+            let dailyHours = {};
+            employees.forEach(e => dailyHours[e] = "0h 00m");
+            
+            if(isEmployeeAvailable("KOSMACZ", dateStr)) dailyHours["KOSMACZ"] = "7h 00m";
+            if(isEmployeeAvailable("KOZBUR", dateStr)) dailyHours["KOZBUR"] = "8h 00m";
+            if(isEmployeeAvailable("ZYGADŁO", dateStr)) dailyHours["ZYGADŁO"] = "8h 00m";
+            if(isEmployeeAvailable("SŁAWIŃSKA", dateStr)) dailyHours["SŁAWIŃSKA"] = "8h 00m";
+            if(isEmployeeAvailable("GRABA", dateStr)) dailyHours["GRABA"] = "8h 00m";
+            if(isEmployeeAvailable("JANKOWIAK", dateStr)) dailyHours["JANKOWIAK"] = "7h 00m";
+            if(kwatkowskiAvailable) dailyHours["KWIATKOWSKI"] = "7h 15m";
+
+            // --- RENDEROWANIE: ZMIANA PORANNA ---
+            outputHtml += `
+                <tr>
+                    <td class="shift-name">Zmiana Poranna</td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-coffee"><div class="block-title">${assignments.poranna.o1}</div><div class="block-time">06:00 - 06:30 Kawa</div></div>
+                            <div class="block-box block-work"><div class="block-title">${assignments.poranna.o1}</div><div class="block-time">06:30 - 13:30</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-coffee"><div class="block-title">${assignments.poranna.o2}</div><div class="block-time">06:30 - 07:00 Kawa</div></div>
+                            <div class="block-box block-work"><div class="block-title">${assignments.poranna.o2}</div><div class="block-time">07:00 - 14:00</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-coffee"><div class="block-title">${assignments.poranna.o3}</div><div class="block-time">06:00 - 06:30 Kawa</div></div>
+                            <div class="block-box block-work"><div class="block-title">${assignments.poranna.o3}</div><div class="block-time">06:30 - 14:30</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.poranna.o4}</div><div class="block-time">10:00 - 13:00</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.poranna.o5}</div><div class="block-time">12:30 - 13:30</div></div>
+                        </div>
+                    </td>
+                    <td>-</td>
+                    <td rowspan="2">
+                        <div class="hours-summary">
+                            ${employees.map(e => `
+                                <div class="hours-row">
+                                    <span class="hours-name">${e}:</span>
+                                    <span class="hours-value">${dailyHours[e]}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            // --- RENDEROWANIE: ZMIANA POPOŁUDNIOWA ---
+            outputHtml += `
+                <tr>
+                    <td class="shift-name">Zmiana Popołudniowa</td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.popoludniowa.o1}</div><div class="block-time">13:30 - 20:00</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.popoludniowa.o2}</div><div class="block-time">14:00 - 20:30</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.popoludniowa.o3}</div><div class="block-time">14:30 - 20:45</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-work"><div class="block-title">${assignments.popoludniowa.o4}</div><div class="block-time">13:00 - 14:00</div></div>
+                            <div class="block-box block-coffee" style="background:#f1f5f9; color:#64748b; border-color:#e2e8f0;"><div class="block-title" style="font-size:9px;">${assignments.popoludniowa.o4_sec}</div><div class="block-time">14:00 - 18:00</div></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            ${kwatkowskiAvailable ? `
+                            <div class="block-box block-work"><div class="block-title">KWIATKOWSKI</div><div class="block-time">14:00 - 20:45</div></div>
+                            ` : '-'}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="schedule-cell">
+                            <div class="block-box block-coffee"><div class="block-title">SŁAWIŃSKA</div><div class="block-time">12:00 - 12:30</div></div>
+                            <div class="block-box block-coffee"><div class="block-title">GRABA</div><div class="block-time">12:30 - 13:00</div></div>
+                            ${kwatkowskiAvailable ? `
+                            <div class="block-box block-coffee"><div class="block-title">KWIATKOWSKI</div><div class="block-time">13:30 - 14:00</div></div>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            currentDate.setDate(currentDate.getDate() + 1);
+            dayCounter++;
+        }
+
+        outputHtml += `</tbody></table>`;
+        document.getElementById('schedule-output').innerHTML = outputHtml;
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('schedule-output');
+        if (!element || element.innerHTML.trim() === "") {
+            alert('Najpierw wygeneruj grafik, aby móc go pobrać.');
+            return;
+        }
+        
+        const opt = {
+            margin:       [10, 10, 10, 10],
+            filename:     'Grafik_Stanowiskowy_Poczta_Polska.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
+        };
+        
+        html2pdf().set(opt).from(element).save();
+    }
+
+    window.onload = function() {
+        initStaffForm();
+    };
+</script>
+
+</body>
+</html>

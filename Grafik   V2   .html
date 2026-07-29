@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikacja: Grafik Stanowiskowy Poczty Polskiej</title>
+    <style>
+        /* CSS Reset i Style Wizualne - Jasny Motyw */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1550px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #0369a1;
+            text-align: center;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #0369a1;
+            padding-bottom: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        input[type="date"], select {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 13px;
+            outline: none;
+            width: 150px;
+        }
+
+        /* Układ kart absencji personelu */
+        .staff-leaves-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .staff-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .staff-card h3 {
+            font-size: 12px;
+            color: #0369a1;
+            margin-bottom: 8px;
+            font-weight: 700;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 4px;
+        }
+
+        /* Styl dla aktywnego pola tekstowego wariantu rezerwowego */
+        .input-wakat-name {
+            width: 100%;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0369a1;
+            padding: 4px 6px;
+            border: 1px solid #0284c7;
+            border-radius: 4px;
+            background-color: #f0f9ff;
+            margin-bottom: 6px;
+            outline: none;
+        }
+
+        .staff-card select, .staff-card input[type="date"] {
+            width: 100%;
+            margin-bottom: 6px;
+            font-size: 11px;
+            padding: 5px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Przyciski */
+        .actions-bar {
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #ffffff;
+            margin-right: 8px;
+        }
+
+        .btn-generate { background-color: #0284c7; }
+        .btn-generate:hover { background-color: #0369a1; }
+        .btn-pdf { background-color: #991b1b; }
+        .btn-pdf:hover { background-color: #7f1d1d; }
+
+        /* Tabela grafiku stanowiskowego */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        .main-grid {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 12px;
+            display: none; /* Ukryta na start */
+        }
+
+        .main-grid th, .main-grid td {
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+        .main-grid th {
+            background-color: #0369a1;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Wiersz nagłówka dnia kalendarzowego */
+        .date-header-row td {
+            background-color: #cbd5e1 !important;
+            font-weight: 800 !important;
+            text-align: left !important;
+            color: #0f172a !important;
+            font-size: 14px !important;
+            padding: 12px 16px !important;
+            letter-spacing: 0.5px;
+            border-top: 4px solid #94a3b8 !important;
+        }
+
+        .etap-cell {
+            font-weight: bold;
+            background-color: #f8fafc;
+            width: 140px;
+            color: #1e293b;
+        }
+
+        /* Kafelki wewnątrz tabeli grafiku */
+        .inner-tile {
+            border-radius: 4px;
+            padding: 6px;
+            margin: 2px 0;
+            text-align: center;
+        }
+
+        .tile-morning {
+            background-color: #ffedd5;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+        }
+
+        .tile-evening {
+            background-color: #e0f2fe;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+        }
+
+        .tile-break {
+            background-color: #fef08a;
+            border: 1px solid #fde047;
+            color: #854d0e;
+            font-style: italic;
+            font-weight: 600;
+        }
+
+        .tile-vacant {
+            background-color: #fee2e2;
+            border: 1px dashed #fca5a5;
+            color: #991b1b;
+            font-weight: bold;
+        }
+
+        .summary-list {
+            text-align: left;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .summary-hours {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        /* Wydruk PDF */
+        @media print {
+            body { background-color: #ffffff; padding: 0; }
+            .app-container { border: none; box-shadow: none; max-width: 100%; padding: 0; }
+            h1, .section-title, .form-group, .staff-leaves-grid, .actions-bar {
+                display: none !important;
+            }
+            .main-grid { display: table !important; }
+            .main-grid th { background-color: #1e293b !important; color: #ffffff !important; }
+            .date-header-row td { background-color: #cbd5e1 !important; color: #000000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h1>Aplikacja: Grafik Stanowiskowy Poczty Polskiej (Wersja V32 - Dynamiczna Weryfikacja Aktywności Pracownika Buforowego)</h1>
+
+    <div class="section-title">1. Wybierz okres grafiku (Wybór tygodnia)</div>
+    <div class="form-group">
+        <label style="display:inline-block; margin-right: 10px;">Data Od:</label>
+        <input type="date" id="param-date-from" value="2026-06-15">
+        <label style="display:inline-block; margin-right: 10px; margin-left: 20px;">Data Do:</label>
+        <input type="date" id="param-date-to" value="2026-06-19">
+    </div>
+
+    <div class="section-title">2. Zgłoś nieobecności personelu (L4 / Urlop)</div>
+    
+    <div class="staff-leaves-grid" id="container-all-staff"></div>
+
+    <div class="actions-bar">
+        <button class="btn btn-generate" onclick="generateAndRenderSchedule()">Opublikuj Grafik</button>
+        <button class="btn btn-pdf" onclick="window.print()">Pobierz do PDF</button>
+    </div>
+
+    <div class="section-title">Wygenerowany Harmonogram Pracy</div>
+    <div class="table-wrapper">
+        <table class="main-grid" id="output-schedule-table"></table>
+    </div>
+</div>
+
+<script>
+    // Baza danych pracowników - pozycja 8 ma flagę isBuffer: true
+    const listaPracownikow = [
+        { id: 1, name: "KOSMACZ", type: "universal" },
+        { id: 2, name: "KOZBUR", type: "universal" },
+        { id: 3, name: "ZYGADŁO", type: "universal" },
+        { id: 4, name: "SŁAWIŃSKA", type: "universal" },
+        { id: 5, name: "GRABA", type: "universal" },
+        { id: 6, name: "JANKOWIAK", type: "universal" },
+        { id: 7, name: "KWIATKOWSKI", type: "evening_only" },
+        { id: 8, name: "NOWY PRACOWNIK", type: "universal", isBuffer: true }
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+        buildUnifiedAbsencePanels();
+    });
+
+    function buildUnifiedAbsencePanels() {
+        const mainContainer = document.getElementById("container-all-staff");
+        mainContainer.innerHTML = "";
+
+        listaPracownikow.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "staff-card";
+
+            let headerContent = "";
+            if (p.isBuffer) {
+                headerContent = `<input type="text" id="name-input-${p.id}" class="input-wakat-name" value="${p.name}" title="Wpisz tutaj nowe nazwisko, aby aktywować pracownika w systemie.">`;
+            } else {
+                let roleLabel = p.type === "evening_only" ? " (Tylko Popołudnie)" : "";
+                headerContent = `<h3>${p.name}${roleLabel}</h3>`;
+            }
+
+            div.innerHTML = `
+                ${headerContent}
+                <select id="status-${p.id}">
+                    <option value="Obecny">Obecny</option>
+                    <option value="L4">L4</option>
+                    <option value="Urlop">Urlop</option>
+                </select>
+                <input type="date" id="from-${p.id}">
+                <input type="date" id="to-${p.id}">
+            `;
+            mainContainer.appendChild(div);
+        });
+    }
+
+    function generateWorkingDaysList(startStr, endStr) {
+        if(!startStr || !endStr) return [];
+        let dates = [];
+        let current = new Date(startStr);
+        let end = new Date(endStr);
+        while (current <= end) {
+            if (current.getDay() !== 0 && current.getDay() !== 6) {
+                dates.push(current.toISOString().split('T')[0]);
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }
+
+    function rotateArray(array, step) {
+        if (!array.length) return array;
+        let l = array.length;
+        let rotated = new Array(l);
+        for (let i = 0; i < l; i++) {
+            rotated[(i + step) % l] = array[i];
+        }
+        return rotated;
+    }
+
+    function obliczMinutyZeStringu(timeStr) {
+        if (!timeStr || !timeStr.includes("-")) return 0;
+        let części = timeStr.split("-");
+        let start = części[0].trim().split(":");
+        let koniec = części[1].trim().split(":");
+        
+        let startMinuty = parseInt(start[0]) * 60 + parseInt(start[1]);
+        let koniecMinuty = parseInt(koniec[0]) * 60 + parseInt(koniec[1]);
+        
+        return koniecMinuty - startMinuty;
+    }
+
+    function getWeekNumber(dateStr) {
+        let d = new Date(dateStr);
+        d.setHours(0,0,0,0);
+        d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+        let yearStart = new Date(d.getFullYear(),0,1);
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function generateAndRenderSchedule() {
+        const dateFrom = document.getElementById("param-date-from").value;
+        const dateTo = document.getElementById("param-date-to").value;
+        const table = document.getElementById("output-schedule-table");
+
+        if (!dateFrom || !dateTo) {
+            alert("Błąd: Proszę najpierw wskazać datę początkową i końcową przed wygenerowaniem harmonogramu!");
+            return;
+        }
+
+        // --- ŻELAZNA BLOKADA LOGICZNA WAKATU ---
+        // Pobieramy wpisaną wartość z pola tekstowego
+        const wakatInput = document.getElementById("name-input-8");
+        let wakatWpisany = wakatInput ? wakatInput.value.trim().toUpperCase() : "";
+        
+        // Sprawdzamy czy użytkownik pozostawił domyślny lub pusty tekst
+        let wakatJestAktywny = (wakatWpisany !== "" && wakatWpisany !== "NOWY PRACOWNIK" && wakatWpisany !== "[WOLNE MIEJSCE]");
+        
+        if (wakatJestAktywny) {
+            listaPracownikow[7].name = wakatWpisany;
+        }
+
+        table.style.display = "table";
+        table.innerHTML = `
+            <tr>
+                <th>Etap Dnia</th>
+                <th>Okienko 1</th>
+                <th>Okienko 2</th>
+                <th>Okienko 3</th>
+                <th>Okienko 4 pomocnicze</th>
+                <th>Okienko 5 pomocnicze</th>
+                <th>Suma Godzin</th>
+            </tr>
+        `;
+
+        let workingDays = generateWorkingDaysList(dateFrom, dateTo);
+        if (workingDays.length === 0) {
+            table.innerHTML += `<tr><td colspan="7" style="color:red; font-weight:bold; padding:20px;">Wybrany przedział czasu nie zawiera dni roboczych!</td></tr>`;
+            return;
+        }
+
+        let przydzialTygodniowyPoranny = {};
+        let przydzialTygodniowyPopoludniowy = {};
+
+        workingDays.forEach((dateStr, dayIdx) => {
+            let weekNum = getWeekNumber(dateStr);
+
+            // Filtrowanie personelu z uwzględnieniem tego, czy Wakat został prawnie dopuszczony do pracy
+            let dostepni = listaPracownikow.filter(p => {
+                if (p.isBuffer && !wakatJestAktywny) return false; // JEŚLI NIE MA NOWEGO NAZWISKA -> WYRZUĆ Z GRAFIKU
+                
+                const status = document.getElementById(`status-${p.id}`)?.value || "Obecny";
+                const odDaty = document.getElementById(`from-${p.id}`)?.value || "";
+                const doDaty = document.getElementById(`to-${p.id}`)?.value || "";
+                return !(status !== "Obecny" && odDaty && doDaty && dateStr >= odDaty && dateStr <= doDaty);
+            });
+
+            let uniwersalni = dostepni.filter(p => p.type === "universal");
+            let kwiatkowski = dostepni.find(p => p.type === "evening_only");
+
+            // --- STAŁY BLOK TYGODNIOWY ---
+            if (!przydzialTygodniowyPoranny[weekNum]) {
+                let zrotowaniUniwersalni = rotateArray(uniwersalni, weekNum);
+                przydzialTygodniowyPoranny[weekNum] = zrotowaniUniwersalni.slice(0, 3);
+                przydzialTygodniowyPopoludniowy[weekNum] = zrotowaniUniwersalni.slice(3);
+            }
+
+            let porannaObsadaTydzień = przydzialTygodniowyPoranny[weekNum].filter(p => dostepni.map(x=>x.id).includes(p.id));
+            let popoludniowaObsadaTydzień = przydzialTygodniowyPopoludniowy[weekNum].filter(p => dostepni.map(x=>x.id).includes(p.id));
+
+            if (porannaObsadaTydzień.length < 3) {
+                let wolniZPopoludnia = popoludniowaObsadaTydzień.filter(p => !porannaObsadaTydzień.includes(p));
+                while(porannaObsadaTydzień.length < 3 && wolniZPopoludnia.length > 0) {
+                    porannaObsadaTydzień.push(wolniZPopoludnia.shift());
+                }
+            }
+
+            let popoludniowaObsada = [];
+            if (kwiatkowski) popoludniowaObsada.push(kwiatkowski);
+            
+            popoludniowaObsadaTydzień.forEach(p => {
+                if (popoludniowaObsada.length < 3 && !porannaObsadaTydzień.includes(p)) {
+                    popoludniowaObsada.push(p);
+                }
+            });
+
+            let siodmyPracownik = uniwersalni.find(p => !porannaObsadaTydzień.includes(p) && !popoludniowaObsada.includes(p)) || null;
+
+            let stanowiskaPoranne = rotateArray(porannaObsadaTydzień, dayIdx);
+            
+            let pulaPopoludniowaDoRotacji = [...popoludniowaObsada];
+            if (siodmyPracownik && pulaPopoludniowaDoRotacji.length < 4) {
+                pulaPopoludniowaDoRotacji.push(siodmyPracownik);
+            }
+            let stanowiskaPopoludniowe = rotateArray(pulaPopoludniowaDoRotacji, dayIdx);
+
+            let strukturaDniaPracownikow = {};
+            listaPracownikow.forEach(p => { if(p.type !== "buffer" || wakatJestAktywny) strukturaDniaPracownikow[p.id] = 0; });
+
+            let użyciDzisiajZajęci = [];
+
+            if (stanowiskaPoranne[0]) {
+                strukturaDniaPracownikow[stanowiskaPoranne[0].id] += obliczMinutyZeStringu("06:00 - 06:30") + obliczMinutyZeStringu("06:30 - 13:30");
+                użyciDzisiajZajęci.push(stanowiskaPoranne[0].id);
+            }
+            if (stanowiskaPoranne[1]) {
+                strukturaDniaPracownikow[stanowiskaPoranne[1].id] += obliczMinutyZeStringu("06:30 - 07:00") + obliczMinutyZeStringu("07:00 - 14:00");
+                użyciDzisiajZajęci.push(stanowiskaPoranne[1].id);
+            }
+            if (stanowiskaPoranne[2]) {
+                strukturaDniaPracownikow[stanowiskaPoranne[2].id] += obliczMinutyZeStringu("06:00 - 06:30") + obliczMinutyZeStringu("06:30 - 14:30");
+                użyciDzisiajZajęci.push(stanowiskaPoranne[2].id);
+            }
+
+            if (siodmyPracownik && !użyciDzisiajZajęci.includes(siodmyPracownik.id)) {
+                strukturaDniaPracownikow[siodmyPracownik.id] += obliczMinutyZeStringu("10:30 - 14:00") + obliczMinutyZeStringu("14:00 - 18:30");
+                użyciDzisiajZajęci.push(siodmyPracownik.id);
+            }
+
+            let dostepniPopoludniowiBezDuplikatów = stanowiskaPopoludniowe.filter(p => !użyciDzisiajZajęci.includes(p.id));
+
+            let pPopoludnie1 = dostepniPopoludniowiBezDuplikatów[0] || null;
+            let pPopoludnie2 = dostepniPopoludniowiBezDuplikatów[1] || null;
+            let pPopoludnie3 = dostepniPopoludniowiBezDuplikatów[2] || null;
+
+            if (pPopoludnie1) {
+                strukturaDniaPracownikow[pPopoludnie1.id] += obliczMinutyZeStringu("13:30 - 20:00");
+                użyciDzisiajZajęci.push(pPopoludnie1.id);
+            }
+            if (pPopoludnie2) {
+                strukturaDniaPracownikow[pPopoludnie2.id] += obliczMinutyZeStringu("14:00 - 20:30");
+                użyciDzisiajZajęci.push(pPopoludnie2.id);
+            }
+            if (pPopoludnie3) {
+                strukturaDniaPracownikow[pPopoludnie3.id] += obliczMinutyZeStringu("14:30 - 20:45");
+                użyciDzisiajZajęci.push(pPopoludnie3.id);
+            }
+
+            let ok4PopoludnieText = '<div class="inner-tile tile-evening" style="background:#e2e8f0; color:#64748b;">REZERWA / BUFOR</div>';
+            if (siodmyPracownik) {
+                ok4PopoludnieText = `<div class="inner-tile tile-evening">${siodmyPracownik.name}<br>14:00 - 18:30</div>`;
+            }
+
+            let ok5PopoludnieText = "-";
+            let pracownikNaOk5 = uniwersalni.find(p => !użyciDzisiajZajęci.includes(p.id));
+            if (!pracownikNaOk5 && kwiatkowski && !użyciDzisiajZajęci.includes(kwiatkowski.id)) {
+                pracownikNaOk5 = kwiatkowski;
+            }
+
+            if (pracownikNaOk5) {
+                ok5PopoludnieText = `<div class="inner-tile tile-evening">${pracownikNaOk5.name}<br>14:00 - 20:45</div>`;
+                strukturaDniaPracownikow[pracownikNaOk5.id] += obliczMinutyZeStringu("14:00 - 20:45");
+                użyciDzisiajZajęci.push(pracownikNaOk5.id);
+            }
+
+            let dateRow = document.createElement("tr");
+            dateRow.className = "date-header-row";
+            dateRow.innerHTML = `<td colspan="7">Dzień Kalendarzowy: ${dateStr}</td>`;
+            table.appendChild(dateRow);
+
+            let trMorn = document.createElement("tr");
+            trMorn.innerHTML = `
+                <td class="etap-cell">Zmiana Poranna</td>
+                <td>${stanowiskaPoranne[0] ? `<div class="inner-tile tile-break">${stanowiskaPoranne[0].name}<br>06:00 - 06:30 Kawa</div><div class="inner-tile tile-morning">${stanowiskaPoranne[0].name}<br>06:30 - 13:30</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>'}</td>
+                <td>${stanowiskaPoranne[1] ? `<div class="inner-tile tile-break">${stanowiskaPoranne[1].name}<br>06:30 - 07:00 Kawa</div><div class="inner-tile tile-morning">${stanowiskaPoranne[1].name}<br>07:00 - 14:00</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>'}</td>
+                <td>${stanowiskaPoranne[2] ? `<div class="inner-tile tile-break">${stanowiskaPoranne[2].name}<br>06:00 - 06:30 Kawa</div><div class="inner-tile tile-morning">${stanowiskaPoranne[2].name}<br>06:30 - 14:30</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>'}</td>
+                <td>${siodmyPracownik ? `<div class="inner-tile tile-morning">${siodmyPracownik.name}<br>10:30 - 14:00</div>` : '-'}</td>
+                <td>-</td>
+            `;
+
+            let sumCell = document.createElement("td");
+            sumCell.rowSpan = 2;
+            sumCell.style.background = "#f8fafc";
+            let sumHtml = `<div class="summary-list">`;
+            
+            listaPracownikow.forEach(p => {
+                if (p.isBuffer && !wakatJestAktywny) return;
+                
+                const status = document.getElementById(`status-${p.id}`)?.value || "Obecny";
+                const odDaty = document.getElementById(`from-${p.id}`)?.value || "";
+                const doDaty = document.getElementById(`to-${p.id}`)?.value || "";
+                let jestNieobecny = (status !== "Obecny" && odDaty && doDaty && dateStr >= odDaty && dateStr <= doDaty);
+
+                if(jestNieobecny) {
+                    sumHtml += `${p.name}: <span style="color:#dc2626; font-weight:bold;">Absencja</span><br>`;
+                } else {
+                    let lacznieMinut = strukturaDniaPracownikow[p.id] || 0;
+                    let displayH = Math.floor(lacznieMinut / 60);
+                    let displayM = lacznieMinut % 60;
+                    sumHtml += `${p.name}: <span class="summary-hours">${displayH}h ${displayM === 0 ? '00m' : displayM + 'm'}</span><br>`;
+                }
+            });
+            sumHtml += `</div>`;
+            sumCell.innerHTML = sumHtml;
+            trMorn.appendChild(sumCell);
+            table.appendChild(trMorn);
+
+            let trEve = document.createElement("tr");
+            let tileOk1Eve = pPopoludnie1 ? `<div class="inner-tile tile-break">13:30 - 14:00<br>PRZEKAZANIE KASY</div><div class="inner-tile tile-evening">${pPopoludnie1.name}<br>14:00 - 20:00</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>';
+            if (pPopoludnie1 && pPopoludnie1.id === 7) {
+                tileOk1Eve = `<div class="inner-tile tile-break">13:30 - 14:00<br>PRZEKAZANIE KASY</div><div class="inner-tile tile-evening">${pPopoludnie1.name}<br>13:30 - 20:00</div>`;
+            }
+
+            trEve.innerHTML = `
+                <td class="etap-cell">Zmiana Popołudniowa</td>
+                <td>${tileOk1Eve}</td>
+                <td>${pPopoludnie2 ? `<div class="inner-tile tile-break">14:00 - 14:30<br>PRZEKAZANIE KASY</div><div class="inner-tile tile-evening">${pPopoludnie2.name}<br>14:00 - 20:30</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>'}</td>
+                <td>${pPopoludnie3 ? `<div class="inner-tile tile-break">14:30 - 15:00<br>PRZEKAZANIE KASY</div><div class="inner-tile tile-evening">${pPopoludnie3.name}<br>14:30 - 20:45</div>` : '<div class="inner-tile tile-vacant">BRAK OBSADY</div>'}</td>
+                <td>${ok4PopoludnieText}</td>
+                <td>${ok5PopoludnieText}</td>
+            `;
+            table.appendChild(trEve);
+        });
+    }
+</script>
+
+</body>
+</html>
